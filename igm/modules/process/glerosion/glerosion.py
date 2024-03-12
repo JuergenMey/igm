@@ -36,7 +36,7 @@ def params(parser):
         "--glerosion_sediment_fac",
         type=float,
         default=2.0,
-        help="Erosion efficency of sediments relative to bedrock.",
+        help="Erosion efficiency of sediments relative to bedrock.",
     )
 
 
@@ -59,7 +59,8 @@ def update(params, state):
         sed = tf.where(state.sed > 0, tf.ones_like(state.sed)*params.glerosion_sediment_fac, state.sed)
         # apply erosion law, erosion rate is proportional to a power of basal sliding speed
         dtopgdt = params.glerosion_cst * (velbase_mag**params.glerosion_exp)*sed
-        
+        # when gflex and glerosion are used, the erosion has to be applied to topg0 (done in the gflex module)
+        state.erosion = (state.t - state.tlast_erosion) * dtopgdt  
 
         state.topg = state.topg - (state.t - state.tlast_erosion) * dtopgdt
         state.sed = state.sed - (state.t - state.tlast_erosion) * dtopgdt

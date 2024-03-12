@@ -39,7 +39,7 @@ def params(parser):
         "--gflex_quiet",
         type=str2bool,
         default=True,
-        help="Default padding option",
+        help="Verbosity",
     )
 
 def initialize(params, state):
@@ -55,7 +55,7 @@ def initialize(params, state):
     state.flex.giafreq = params.gflex_update_freq
     state.flex.giatime = params.gflex_update_freq
     state.flex.dx = params.gflex_dx
-    state.flex.Quiet = False
+    state.flex.Quiet = params.gflex_quiet
     state.flex.pad = params.gflex_pad
     state.flex.Method = "FD"
     state.flex.PlateSolutionType = "vWC1994"
@@ -66,10 +66,10 @@ def initialize(params, state):
     state.flex.rho_m = 3300.0
     state.flex.rho_fill = 0
     state.flex.dy = state.flex.dx
-    state.flex.BC_W = "0Displacement0Slope"
-    state.flex.BC_E = "0Displacement0Slope"
-    state.flex.BC_S = "0Displacement0Slope"
-    state.flex.BC_N = "0Displacement0Slope"
+    state.flex.BC_W = "Periodic"
+    state.flex.BC_E = "Periodic"
+    state.flex.BC_S = "Periodic"
+    state.flex.BC_N = "Periodic"
 
     if not hasattr(state, "Te"):
         state.flex.Te0 = np.ones_like(state.thk.numpy()) * params.gflex_default_Te
@@ -176,8 +176,11 @@ def update(params, state):
                 state.flex.w = state.flex.w[p:-p,p:-p]
         
         # add the deflection to the topography 
-        state.topg = state.topg0 + state.flex.w
-        state.usurf = state.topg + state.thk
+        if hasattr(state, "tlast_erosion"):
+            state.topg = state.topg0 - state.erosion + state.flex.w
+        else:
+            state.topg = state.topg0 + state.flex.w
+            state.usurf = state.topg + state.thk
         # state.flex.plotChoice='both'
         # state.flex.output()
         # plt.imshow(state.flex.w)
