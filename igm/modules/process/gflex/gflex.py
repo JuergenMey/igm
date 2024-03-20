@@ -20,7 +20,7 @@ def params(parser):
     parser.add_argument(
         "--gflex_default_Te",
         type=float,
-        default=50000,
+        default=20000,
         help="Default value for Te (Elastic thickness [m]) if not given as ncdf file",
     )
     parser.add_argument(
