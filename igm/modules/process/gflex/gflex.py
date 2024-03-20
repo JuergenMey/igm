@@ -129,6 +129,10 @@ def update(params, state):
         state.flex.Te = np.float32(state.flex.Te0)       
         state.flex.qs = state.thk.numpy() * 917 * 9.81  # convert thicknesses to loads
         
+        # Erosional unloading
+        if hasattr(state,"erosion"):
+            state.flex.qs = state.flex.qs - (state.total_erosion * 2000 * 9.81)
+        
         if state.dx < state.flex.dx:
             if np.shape(state.flex.Te)==np.shape(state.flex.qs): # in case you want to use a pre-padded (and resampled) Te grid
                 state.flex.Te = downsample_array_to_resolution(state.flex.Te, state.dx, state.flex.dx)  
