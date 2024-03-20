@@ -177,7 +177,7 @@ def update(params, state):
         
         # add the deflection to the topography 
         if hasattr(state, "tlast_erosion"):
-            state.topg = state.topg0 - state.erosion + state.flex.w
+            state.topg = state.topg0 - state.total_erosion + state.flex.w
         else:
             state.topg = state.topg0 + state.flex.w
             state.usurf = state.topg + state.thk
