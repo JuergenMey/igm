@@ -57,7 +57,7 @@ def update(params, state):
 
         velbase_mag = getmag(state.U[0], state.V[0])
         
-        sed = tf.where(state.sed > 0, tf.ones_like(state.sed)*params.glerosion_sediment_fac, state.sed)
+        sed = tf.where(state.sed > 0, tf.ones_like(state.sed)*params.glerosion_sediment_fac, 1)
         # apply erosion law, erosion rate is proportional to a power of basal sliding speed
         dtopgdt = params.glerosion_cst * (velbase_mag**params.glerosion_exp)*sed
         # when gflex and glerosion are used, the erosion has to be applied to topg0 (done in the gflex module)
