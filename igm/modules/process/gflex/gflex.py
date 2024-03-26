@@ -190,7 +190,7 @@ def update(params, state):
             state.topg = state.topg0 + state.flex.w
             state.usurf = state.topg + state.thk
             
-        state.isostasy = state.flex.w
+        state.isostasy = tf.Variable(state.flex.w, dtype=tf.float32)
         # state.flex.plotChoice='both'
         # state.flex.output()
         # plt.imshow(state.flex.w)
