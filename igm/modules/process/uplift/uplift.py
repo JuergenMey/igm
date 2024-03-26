@@ -35,6 +35,7 @@ def initialize(params, state):
     
     state.tcomp_uplift = []
     state.tlast_uplift = tf.Variable(params.time_start, dtype=tf.float32)
+    state.uplift = tf.zeros_like(state.topg)
     
 
 def update(params, state):
@@ -49,7 +50,7 @@ def update(params, state):
 
       
         # add the uplift to the topography 
-       
+        state.uplift = state.uplift + (state.t - state.tlast_uplift) * params.uplift_rate
         state.topg = state.topg + (state.t - state.tlast_uplift) * params.uplift_rate
        
 
