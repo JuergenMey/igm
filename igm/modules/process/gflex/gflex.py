@@ -180,9 +180,9 @@ def update(params, state):
                 state.flex.w = state.flex.w[p:-p,p:-p]
         
         # add the deflection to the topography 
-        if hasattr(state, "tlast_erosion"): # account for erosion
+        if hasattr(state, "tlast_erosion") and not hasattr(state, "tlast_uplift"): # account for erosion
             state.topg = state.topg0 - state.total_erosion + state.flex.w
-        elif hasattr(state, "tlast_uplift"): # account for uplift
+        elif hasattr(state, "tlast_uplift")and not hasattr(state, "tlast_erosion"): # account for uplift
             state.topg = state.topg0 + state.uplift + state.flex.w
         elif hasattr(state, "tlast_uplift") and hasattr(state, "tlast_erosion"): # account for uplift and erosion
             state.topg = state.topg0 - state.total_erosion + state.uplift + state.flex.w    
