@@ -506,12 +506,12 @@ def initialize(params, state):
 
             if i == 0:
                 print(
-                    "                   Step  |  ICE_VOL |  COST_U  |  COST_H  |  COST_D  |  COST_S  |   REGU_H |   REGU_S | COST_GLEN | MEAN_SLIDCO  | SUM_DIVFLUX  "
+                    "                   Step  |  ICE_VOL |  COST_U  |  COST_H  |  COST_D  |  COST_S  |   REGU_H |   REGU_S | COST_GLEN | MEAN_SLIDCO   "
                 )
 
             if i % params.opti_output_freq == 0:
                 print(
-                    "OPTI %s :   %6.0f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.4f |   %6.4f |"
+                    "OPTI %s :   %6.0f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.2f |   %6.4f |"
                     % (
                         datetime.datetime.now().strftime("%H:%M:%S"),
                         i,
@@ -523,8 +523,7 @@ def initialize(params, state):
                         REGU_H.numpy(),
                         REGU_S.numpy(),
                         COST_GLEN.numpy(),
-                        mean_slidingco.numpy(),
-                        tf.reduce_mean(divflux[ACT]).numpy(),
+                        mean_slidingco.numpy()
                     )
                 )
 
@@ -874,7 +873,7 @@ def _update_plot_inversion(params, state, i):
             plt.ion()  # enable interactive mode
 
         # state.fig = plt.figure()
-        state.fig, state.axes = plt.subplots(2, 3)
+        state.fig, state.axes = plt.subplots(2, 3,figsize=(10, 8))
 
         state.extent = [state.x[0], state.x[-1], state.y[0], state.y[-1]]
 
@@ -890,7 +889,7 @@ def _update_plot_inversion(params, state, i):
         origin="lower",
         extent=state.extent,
         vmin=0,
-        #                    vmax=np.quantile(state.thk, 0.98),
+        vmax=np.quantile(state.thk, 0.98),
         cmap=cmap,
     )
     if i == 0:
@@ -957,8 +956,7 @@ def _update_plot_inversion(params, state, i):
         velsurf_mag, # np.ma.masked_where(state.thk == 0, velsurf_mag),
         origin="lower",
         extent=state.extent,
-        vmin=0,
-        vmax=np.nanmax(velsurfobs_mag),
+        norm=matplotlib.colors.LogNorm(vmin=1, vmax=5000),
         cmap=cmap,
     )
     if i == 0:
@@ -980,8 +978,7 @@ def _update_plot_inversion(params, state, i):
         np.ma.masked_where(state.thk == 0, velsurfobs_mag),
         origin="lower",
         extent=state.extent,
-        vmin=0,
-        vmax=np.nanmax(velsurfobs_mag),
+        norm=matplotlib.colors.LogNorm(vmin=1, vmax=5000),
         cmap=cmap,
     )
     if i == 0:
@@ -1066,7 +1063,7 @@ def _update_plot_inversion_simple(params, state, i):
         origin="lower",
         extent=state.extent,
         vmin=0,
-        #                    vmax=np.quantile(state.thk, 0.98),
+        vmax=np.quantile(state.thk, 0.98),
         cmap=cmap,
     )
     if i == 0:
