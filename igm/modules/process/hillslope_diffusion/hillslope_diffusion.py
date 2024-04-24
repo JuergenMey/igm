@@ -81,6 +81,9 @@ def initialize(params, state):
     state.hillslope_diffusion.nrc = nrc
     state.hillslope_diffusion.L = L
     state.hillslope_diffusion.D = D
+    
+
+            
          
 def update(params, state):
     if (state.t - state.tlast_hillslope_diffusion) >= params.hillslope_diffusion_update_freq:
@@ -92,8 +95,16 @@ def update(params, state):
         if hasattr(state, "logger"):
             state.logger.info("Update uplift at time : " + str(state.t.numpy()))
         state.tcomp_hillslope_diffusion.append(time.time())
+        nrc = state.hillslope_diffusion.nrc
+        L = state.hillslope_diffusion.L
+        D = state.hillslope_diffusion.D
         
-        D  = eye(state.hillslope_diffusion.nrc) + spdiags(state.hillslope_diffusion.D,0,nrc,nrc)*state.dt.numpy()/(2*state.dx.numpy()*state.dx.numpy())*state.hillslope_diffusion.L        
+        
+        try:
+            D  = eye(nrc) + spdiags(D,0,nrc,nrc)*state.dt.numpy()/(2*state.dx.numpy()*state.dx.numpy())*L     
+        except:
+            D  = eye(nrc) + spdiags(D,0,nrc,nrc)*state.dt/(2*state.dx.numpy()*state.dx.numpy())*L 
+            
         D = D.astype(dtype='float32')
         I = tf.math.is_nan(state.topg)
         state.topg = tf.where(tf.math.is_nan(state.topg), tf.zeros_like(state.topg), state.topg)
@@ -109,3 +120,5 @@ def update(params, state):
         state.tcomp_hillslope_diffusion[-1] -= time.time()
         state.tcomp_hillslope_diffusion[-1] *= -1
         
+def finalize(params, state):
+    pass
