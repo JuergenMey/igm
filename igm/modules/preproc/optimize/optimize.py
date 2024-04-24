@@ -221,6 +221,13 @@ def params(parser):
         help="uniformize the density of thkobs",
     )
 
+    parser.add_argument(
+        "--sole_mask",
+        type=str2bool,
+        default=False,
+        help="sole_mask",
+    )
+
 def initialize(params, state):
     """
     This function does the data assimilation (inverse modelling) to optimize thk, slidingco ans usurf from data
@@ -292,6 +299,8 @@ def initialize(params, state):
     sc["thk"] = params.opti_scaling_thk
     sc["usurf"] = params.opti_scaling_usurf
     sc["slidingco"] = params.opti_scaling_slidingco
+    
+    Ny, Nx = state.thk.shape
 
     for f in params.opti_control:
         vars()[f] = tf.Variable(vars(state)[f] / sc[f])
@@ -316,7 +325,7 @@ def initialize(params, state):
             X = fieldin_to_X(params, fieldin)
 
             # evalutae th ice flow emulator
-            Y = state.iceflow_model(X)
+            Y = state.iceflow_model(tf.pad(X, state.PAD, "CONSTANT"))[:, :Ny, :Nx, :]
 
             U, V = Y_to_UV(params, Y)
 
@@ -328,6 +337,9 @@ def initialize(params, state):
             
             state.uvelsurf = U[-1]
             state.vvelsurf = V[-1]
+
+            state.uvelbase = U[0]
+            state.vvelbase = V[0]
 
             state.velsurf = tf.stack(
                 [state.uvelsurf, state.vvelsurf], axis=-1
@@ -436,6 +448,11 @@ def initialize(params, state):
                 if params.opti_smooth_anisotropy_factor == 1:
                     dbdx = (state.topg[:, 1:] - state.topg[:, :-1])/state.dx
                     dbdy = (state.topg[1:, :] - state.topg[:-1, :])/state.dx
+                    
+                    if params.sole_mask:
+                        dbdx = tf.where( (state.icemaskobs[:, 1:] > 0.5) & (state.icemaskobs[:, :-1] > 0.5) , dbdx, 0.0)
+                        dbdy = tf.where( (state.icemaskobs[1:, :] > 0.5) & (state.icemaskobs[:-1, :] > 0.5) , dbdy, 0.0)
+ 
                     REGU_H = (params.opti_regu_param_thk) * (
                         tf.nn.l2_loss(dbdx) + tf.nn.l2_loss(dbdy)
                         - gamma * tf.math.reduce_sum(state.thk)
@@ -462,6 +479,11 @@ def initialize(params, state):
                 # if not hasattr(state, "flowdirx"):
                 dadx = (state.slidingco[:, 1:] - state.slidingco[:, :-1])/state.dx
                 dady = (state.slidingco[1:, :] - state.slidingco[:-1, :])/state.dx
+
+                if params.sole_mask:                
+                    dadx = tf.where( (state.icemaskobs[:, 1:] > 0.5) & (state.icemaskobs[:, :-1] > 0.5) , dadx, 0.0)
+                    dady = tf.where( (state.icemaskobs[1:, :] > 0.5) & (state.icemaskobs[:-1, :] > 0.5) , dady, 0.0)
+                
                 REGU_S = (params.opti_regu_param_slidingco) * (
                     tf.nn.l2_loss(dadx) + tf.nn.l2_loss(dady)
                 )
@@ -549,9 +571,14 @@ def initialize(params, state):
             grads = tf.Variable(t.gradient(COST, var_to_opti))
 
             # this serve to restict the optimization of controls to the mask
-            for ii in range(grads.shape[0]):
-                if not "slidingco" == params.opti_control[ii]:
+
+            if params.sole_mask:
+                for ii in range(grads.shape[0]): 
                     grads[ii].assign(tf.where((state.icemaskobs > 0.5), grads[ii], 0))
+            else:
+                for ii in range(grads.shape[0]):
+                    if not "slidingco" == params.opti_control[ii]:
+                        grads[ii].assign(tf.where((state.icemaskobs > 0.5), grads[ii], 0))
 
             # One step of descent -> this will update input variable X
             optimizer.apply_gradients(
@@ -725,12 +752,18 @@ def _update_ncdf_optimize(params, state, it):
 
     if hasattr(state, "logger"):
         state.logger.info("Initialize  and write NCDF output Files")
+        
+    if "velbase_mag" in params.opti_vars_to_save:
+        state.velbase_mag = getmag(state.uvelbase, state.vvelbase)
 
     if "velsurf_mag" in params.opti_vars_to_save:
         state.velsurf_mag = getmag(state.uvelsurf, state.vvelsurf)
 
     if "velsurfobs_mag" in params.opti_vars_to_save:
         state.velsurfobs_mag = getmag(state.uvelsurfobs, state.vvelsurfobs)
+        
+    if "sliding_ratio" in params.opti_vars_to_save:
+        state.sliding_ratio = tf.where(state.velsurf_mag > 10, state.velbase_mag / state.velsurf_mag, np.nan)
 
     if it == 0:
         nc = Dataset(
