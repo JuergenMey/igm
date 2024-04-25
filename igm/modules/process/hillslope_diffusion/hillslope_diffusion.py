@@ -114,7 +114,7 @@ def update(params, state):
         Z1, istop, itn, r1norm = lsqr(D, Z1)[:4]
         Z1 = np.float32(Z1)
         Z = tf.reshape(Z1,tf.shape(state.topg));
-        state.hillslope_diffusion = state.topg-Z
+        state.hillslope_diffusion = state.hillslope_diffusion+(state.topg-Z)
         state.topg = tf.reshape(Z1,tf.shape(state.topg))
         
         state.tlast_hillslope_diffusion.assign(state.t)
