@@ -78,9 +78,9 @@ def initialize(params, state):
     D = np.ones_like(state.topg)*params.hillslope_diffusivity
     D = D.flatten();
     
-    state.hillslope_diffusion.nrc = nrc
-    state.hillslope_diffusion.L = L
-    state.hillslope_diffusion.D = D
+    state.nrc = nrc
+    state.L = L
+    state.D = D
     
 
             
@@ -93,11 +93,11 @@ def update(params, state):
             )
  
         if hasattr(state, "logger"):
-            state.logger.info("Update uplift at time : " + str(state.t.numpy()))
+            state.logger.info("Update hillslope diffusion at time : " + str(state.t.numpy()))
         state.tcomp_hillslope_diffusion.append(time.time())
-        nrc = state.hillslope_diffusion.nrc
-        L = state.hillslope_diffusion.L
-        D = state.hillslope_diffusion.D
+        nrc = state.nrc
+        L = state.L
+        D = state.D
         
         
         try:
@@ -113,6 +113,8 @@ def update(params, state):
         # Solve the linear least squares problem A_sparse * x = b using lsqr
         Z1, istop, itn, r1norm = lsqr(D, Z1)[:4]
         Z1 = np.float32(Z1)
+        Z = tf.reshape(Z1,tf.shape(state.topg));
+        state.hillslope_diffusion = state.topg-Z
         state.topg = tf.reshape(Z1,tf.shape(state.topg))
         
         state.tlast_hillslope_diffusion.assign(state.t)
