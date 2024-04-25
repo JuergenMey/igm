@@ -189,7 +189,7 @@ def update(params, state):
         elif hasattr(state, "tlast_uplift") and hasattr(state, "tlast_erosion") and not hasattr(state, "tlast_hillslope_diffusion"): # account for uplift and erosion
             state.topg = state.topg0 - state.total_erosion + state.uplift + state.flex.w    
         elif hasattr(state, "tlast_uplift") and hasattr(state, "tlast_erosion") and hasattr(state, "tlast_hillslope_diffusion"): # account for uplift, erosion and hillslope diffusion
-            state.topg = state.topg0 - state.total_erosion + state.uplift + state.flex.w + state.hillslope_diffusion
+            state.topg = state.topg0 - state.total_erosion + state.uplift + state.flex.w - state.hillslope_diffusion
         else:
             state.topg = state.topg0 + state.flex.w
             state.usurf = state.topg + state.thk
