@@ -207,7 +207,7 @@ def update(params, state):
         # mean_dHs_hillslope = mean_dHs;
 
         state.topg = state.topg + dH
-
+        state.hillslope = dH
 
         
         
