@@ -1,4 +1,4 @@
-from .hillslope_diffusion import (
+from .hillslope import (
     params,
     initialize,
     finalize,
