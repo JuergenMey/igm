@@ -38,7 +38,7 @@ def params(parser):
     parser.add_argument(
         "--hillslope_update_freq",
         type=float,
-        default=2,
+        default=1,
         help="Hillslope_diffusion_update_freq (yr)",    
     )
     parser.add_argument(
