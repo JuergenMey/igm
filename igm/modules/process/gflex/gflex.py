@@ -131,7 +131,7 @@ def update(params, state):
         
         # Erosional unloading
         if hasattr(state,"erosion"):
-            state.flex.qs = state.flex.qs - (state.total_erosion.numpy() * 2000 * 9.81)
+            state.flex.qs = state.flex.qs - (state.glerosion.numpy() * 2000 * 9.81)
         
         if state.dx < state.flex.dx:
             if np.shape(state.flex.Te)==np.shape(state.flex.qs): # in case you want to use a pre-padded (and resampled) Te grid
@@ -183,13 +183,13 @@ def update(params, state):
         # add the deflection to the topography 
         # this if block needs revision
         if hasattr(state, "tlast_erosion") and not hasattr(state, "tlast_uplift"): # account for erosion
-            state.topg = state.topg0 - state.total_erosion + state.flex.w
+            state.topg = state.topg0 - state.glerosion + state.flex.w
         elif hasattr(state, "tlast_uplift")and not hasattr(state, "tlast_erosion"): # account for uplift
             state.topg = state.topg0 + state.uplift + state.flex.w
         elif hasattr(state, "tlast_uplift") and hasattr(state, "tlast_erosion") and not hasattr(state, "tlast_hillslope_diffusion"): # account for uplift and erosion
-            state.topg = state.topg0 - state.total_erosion + state.uplift + state.flex.w    
+            state.topg = state.topg0 - state.glerosion + state.uplift + state.flex.w    
         elif hasattr(state, "tlast_uplift") and hasattr(state, "tlast_erosion") and hasattr(state, "tlast_hillslope"): # account for uplift, erosion and hillslope diffusion
-            state.topg = state.topg0 - state.total_erosion + state.uplift + state.flex.w - state.hillslope
+            state.topg = state.topg0 - state.glerosion + state.uplift + state.flex.w - state.hillslope
         else:
             state.topg = state.topg0 + state.flex.w
             state.usurf = state.topg + state.thk
