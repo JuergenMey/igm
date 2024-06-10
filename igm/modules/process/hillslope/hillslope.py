@@ -38,8 +38,14 @@ def params(parser):
     parser.add_argument(
         "--hillslope_update_freq",
         type=float,
-        default=1,
+        default=2,
         help="Hillslope_diffusion_update_freq (yr)",    
+    )
+    parser.add_argument(
+        "--maxb",
+        type=float,
+        default=0.7,
+        help="Maximum_bed_gradient",    
     )
     
    
@@ -50,6 +56,7 @@ def initialize(params, state):
     
     state.hillslope_erosion = tf.zeros_like(state.topg)
     state.hillslope_erate = tf.zeros_like(state.topg)
+    state.sed = tf.zeros_like(state.topg)
     if not hasattr(state,'sed'):
         tf.zeros_like(state.topg)
     state.nrc = tf.size(state.topg)
@@ -65,11 +72,16 @@ def update(params, state):
         # x-dir
         hp_dbdx = (-tf.roll(state.topg,-1,1)+state.topg)/state.dx;
         hp_dhdx = (-tf.roll(state.usurf,-1,1)+state.usurf)/state.dx;
-        hp_dtdx = hp_dhdx;        
+        hp_dtdx = hp_dhdx;  
+        hp_dbdx = tf.where(hp_dbdx < -params.maxb, -params.maxb, hp_dbdx)
+        hp_dbdx = tf.where(hp_dbdx > params.maxb, params.maxb, hp_dbdx)
+       
         # y-dir
         vp_dbdy = (state.topg-tf.roll(state.topg,1,0))/state.dx;
         vp_dhdy = (state.usurf-tf.roll(state.usurf,1,0))/state.dx;
         vp_dtdy = vp_dhdy;
+        vp_dbdy = tf.where(vp_dbdy < -params.maxb, -params.maxb, vp_dbdy)
+        vp_dbdy = tf.where(vp_dbdy > params.maxb, params.maxb, vp_dbdy)
         
         dbdx = 0.5*(hp_dbdx + tf.roll(hp_dbdx,1,1));
         dhdx = 0.5*(hp_dhdx + tf.roll(hp_dhdx,1,1));
@@ -89,8 +101,8 @@ def update(params, state):
         
         hillslope_erosion = state.hillslope_erosion
         hillslope_erate = state.hillslope_erate
-        #sed = state.sed;
-        sed = tf.zeros_like(state.topg)
+        sed = state.sed;
+        
         
         #/***************** Erosion (critical slope) *****************/
         
@@ -201,7 +213,9 @@ def update(params, state):
         dH = dH + dHs;
         dH = dH - tf.roll(dHs,-1,0);
 
-        sed = sed + dH;
+        state.sed = sed + dH;
+        state.hillslope_erosion = hillslope_erosion
+        state.hillslope_erate = hillslope_erate
         # mean_dHs = mean_dHs + tf.reduce_sum(tf.abs(dH));
         # mean_dHs = tf.divide(mean_dHs,nc)*2.0 
         # mean_dHs_hillslope = mean_dHs;
