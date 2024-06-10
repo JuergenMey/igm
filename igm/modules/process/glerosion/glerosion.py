@@ -41,7 +41,7 @@ def params(parser):
 
 
 def initialize(params, state):
-    state.total_erosion = tf.zeros_like(state.topg)
+    state.glerosion = tf.zeros_like(state.topg)
     state.tcomp_glerosion = []
     state.tlast_erosion = tf.Variable(params.time_start, dtype=tf.float32)
 
@@ -62,7 +62,7 @@ def update(params, state):
         dtopgdt = params.glerosion_cst * (velbase_mag**params.glerosion_exp)*sed
         # when gflex and glerosion are used, the erosion has to be applied to topg0 (done in the gflex module)
         state.erosion = (state.t - state.tlast_erosion) * dtopgdt  
-        state.total_erosion += (state.t - state.tlast_erosion) * dtopgdt 
+        state.glerosion += (state.t - state.tlast_erosion) * dtopgdt 
         state.topg = state.topg - (state.t - state.tlast_erosion) * dtopgdt
         state.sed = state.sed - (state.t - state.tlast_erosion) * dtopgdt
         state.sed = tf.where(state.sed < 0, tf.zeros_like(state.sed), state.sed)
