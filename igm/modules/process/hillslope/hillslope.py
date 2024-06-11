@@ -57,8 +57,10 @@ def initialize(params, state):
     state.hillslope_erosion = tf.zeros_like(state.topg)
     state.hillslope_erate = tf.zeros_like(state.topg)
     state.sed = tf.zeros_like(state.topg)
+    
     if not hasattr(state,'sed'):
         tf.zeros_like(state.topg)
+    state.bed = state.topg - state.sed
     state.nrc = tf.size(state.topg)
    
          
@@ -67,6 +69,8 @@ def update(params, state):
         if hasattr(state, "logger"):
             state.logger.info("Update hillslope erosion at time : " + str(state.t.numpy()))
         state.tcomp_hillslope.append(time.time())
+        
+        state.topg = state.bed + state.sed
         
         #/***************** get gradients *****************/
         # x-dir
@@ -118,22 +122,25 @@ def update(params, state):
         sdiff = Ke/fac;
         ero = sdiff*hp_dbdx*state.dt/state.dx*tf.sqrt(1.0+tf.square(bslope));        
         
-        maxero = -state.topg+tf.roll(state.topg,-1,1)-sc*state.dx;
+        maxero = -state.bed+tf.roll(state.bed,-1,1)-sc*state.dx;
         maxero = tf.where(maxero  < 0.0, tf.zeros_like(maxero), maxero);
         ero = tf.where(tf.logical_and(ero < -maxero, ero < 0),-maxero, ero)
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         csero = tf.roll(ero,1,1);
         ero_l = csero<0.0;
+        # bed(ero_l) = bed(ero_l) + csero(ero_l);
+        state.bed = tf.where(ero_l,state.bed+csero,state.bed)
         hillslope_erosion = tf.where(ero_l,hillslope_erosion-csero,hillslope_erosion)
         hillslope_erate = tf.where(ero_l,-csero/state.dt,hillslope_erate)
         sed = tf.where(ero_l,sed-csero,sed)
         
-        maxero = state.topg-tf.roll(state.topg,-1,1)-sc*state.dx;
+        maxero = state.bed-tf.roll(state.bed,-1,1)-sc*state.dx;
         maxero = tf.where(maxero  < 0.0, tf.zeros_like(maxero), maxero);
         ero = tf.where(tf.logical_and(ero > maxero, ero > 0),maxero, ero) 
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         ero_u = ero>0;                      
         # if (cells[i][j].ice > 5) ero = 0.0;
+        state.bed = tf.where(ero_u,state.bed - ero,state.bed)
         hillslope_erosion = tf.where(ero_u,hillslope_erosion + ero,hillslope_erosion)
         hillslope_erate = tf.where(ero_u,ero/state.dt,hillslope_erate)
         sed = tf.where(ero_u,sed + ero,sed)
@@ -145,21 +152,23 @@ def update(params, state):
         sdiff = Ke/fac;
         ero = sdiff*vp_dbdy*state.dt/state.dx*tf.sqrt(1.0+tf.square(bslope));
 
-        maxero = tf.roll(state.topg,1,0)-state.topg-sc*state.dx;
+        maxero = tf.roll(state.bed,1,0)-state.bed-sc*state.dx;
         maxero = tf.where(maxero  < 0.0, tf.zeros_like(maxero), maxero);
         ero = tf.where(tf.logical_and(ero < -maxero, ero < 0),-maxero, ero)  
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         csero = tf.roll(ero,-1,0);
         ero_l = csero<0.0;
+        state.bed = tf.where(ero_l,state.bed + csero,state.bed)
         hillslope_erosion = tf.where(ero_l, hillslope_erosion - csero, hillslope_erosion)
         hillslope_erate = tf.where(ero_l, -csero/state.dt, hillslope_erate)
         sed = tf.where(ero_l ,sed-csero, sed)
 
-        maxero = state.topg-tf.roll(state.topg,1,0)-sc*state.dx;
+        maxero = state.bed-tf.roll(state.bed,1,0)-sc*state.dx;
         maxero = tf.where(maxero  < 0.0, tf.zeros_like(maxero), maxero);
         ero = tf.where(tf.logical_and(ero > maxero, ero > 0),maxero, ero)
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         ero_u = ero>0;
+        state.bed = tf.where(ero_u,state.bed - ero,state.bed)
         hillslope_erosion = tf.where(ero_u, hillslope_erosion + ero, hillslope_erosion)
         hillslope_erate = tf.where(ero_u, ero/state.dt, hillslope_erate)
         sed = tf.where(ero_u, sed+ero, sed)
@@ -220,7 +229,7 @@ def update(params, state):
         # mean_dHs = tf.divide(mean_dHs,nc)*2.0 
         # mean_dHs_hillslope = mean_dHs;
 
-        state.topg = state.topg + dH
+        # state.topg = state.topg + dH
         state.hillslope = dH
 
         
