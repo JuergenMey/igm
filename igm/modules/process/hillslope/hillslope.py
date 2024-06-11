@@ -56,10 +56,10 @@ def initialize(params, state):
     
     state.hillslope_erosion = tf.zeros_like(state.topg)
     state.hillslope_erate = tf.zeros_like(state.topg)
-    state.sed = tf.zeros_like(state.topg)
+    # state.sed = tf.zeros_like(state.topg)
     
     if not hasattr(state,'sed'):
-        tf.zeros_like(state.topg)
+        state.sed = tf.zeros_like(state.topg)
     state.bed = state.topg - state.sed
     state.nrc = tf.size(state.topg)
    
@@ -71,6 +71,9 @@ def update(params, state):
         state.tcomp_hillslope.append(time.time())
         
         state.topg = state.bed + state.sed
+        sc = params.critical_slope
+        Ks = params.hillslope_diffusivity
+        Ke = params.hillslope_erosion_coefficient
         
         #/***************** get gradients *****************/
         # x-dir
@@ -107,15 +110,9 @@ def update(params, state):
         hillslope_erate = state.hillslope_erate
         sed = state.sed;
         
-        
         #/***************** Erosion (critical slope) *****************/
         
         ###### h-points ################
-        
-        sc = tf.ones_like(state.topg)*0.7 
-        sc = tf.constant(0.7, dtype=tf.float32) # need to go into paramparser
-        Ke = tf.constant(0.01, dtype=tf.float32) # need to go into paramparser
-        Ks = tf.constant(0.01, dtype=tf.float32) # need to go into paramparser
         
         fac = 1.0 - tf.square(tf.divide(hp_dbdx,sc));
         fac = tf.where(fac < 1.0e-4, tf.ones_like(fac)*1.0e-4, fac)
@@ -128,7 +125,6 @@ def update(params, state):
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         csero = tf.roll(ero,1,1);
         ero_l = csero<0.0;
-        # bed(ero_l) = bed(ero_l) + csero(ero_l);
         state.bed = tf.where(ero_l,state.bed+csero,state.bed)
         hillslope_erosion = tf.where(ero_l,hillslope_erosion-csero,hillslope_erosion)
         hillslope_erate = tf.where(ero_l,-csero/state.dt,hillslope_erate)
@@ -173,9 +169,10 @@ def update(params, state):
         hillslope_erate = tf.where(ero_u, ero/state.dt, hillslope_erate)
         sed = tf.where(ero_u, sed+ero, sed)
         
+        
         ##### hillslope sediment transport ##############
+        
         dH =  tf.zeros_like(state.topg)
-
 
         # /*h-points for horizontal transport*/
 
