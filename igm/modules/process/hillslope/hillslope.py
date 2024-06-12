@@ -56,7 +56,7 @@ def initialize(params, state):
     
     state.hillslope_erosion = tf.zeros_like(state.topg)
     state.hillslope_erate = tf.zeros_like(state.topg)
-    # state.sed = tf.zeros_like(state.topg)
+    state.sed = tf.zeros_like(state.topg)
     
     if not hasattr(state,'sed'):
         state.sed = tf.zeros_like(state.topg)
@@ -70,7 +70,7 @@ def update(params, state):
             state.logger.info("Update hillslope erosion at time : " + str(state.t.numpy()))
         state.tcomp_hillslope.append(time.time())
         
-        state.topg = state.bed + state.sed
+        state.bed = state.topg - state.sed
         sc = params.critical_slope
         Ks = params.hillslope_diffusivity
         Ke = params.hillslope_erosion_coefficient
