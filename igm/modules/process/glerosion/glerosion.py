@@ -44,6 +44,8 @@ def initialize(params, state):
     state.glerosion = tf.zeros_like(state.topg)
     state.tcomp_glerosion = []
     state.tlast_erosion = tf.Variable(params.time_start, dtype=tf.float32)
+    if not hasattr(state,'sed'):
+        state.sed = tf.zeros_like(state.topg)
 
 
 def update(params, state):

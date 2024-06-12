@@ -2,7 +2,7 @@
 """
 Created on Fri Apr 19 08:23:04 2024
 
-@author: Jürgen
+@author: Jürgen Mey
 """
 
 
@@ -56,7 +56,7 @@ def initialize(params, state):
     
     state.hillslope_erosion = tf.zeros_like(state.topg)
     state.hillslope_erate = tf.zeros_like(state.topg)
-    state.sed = tf.zeros_like(state.topg)
+    # state.sed = tf.zeros_like(state.topg)
     
     if not hasattr(state,'sed'):
         state.sed = tf.zeros_like(state.topg)
@@ -70,7 +70,7 @@ def update(params, state):
             state.logger.info("Update hillslope erosion at time : " + str(state.t.numpy()))
         state.tcomp_hillslope.append(time.time())
         
-        state.bed = state.topg - state.sed
+        # state.topg = state.bed + state.sed
         sc = params.critical_slope
         Ks = params.hillslope_diffusivity
         Ke = params.hillslope_erosion_coefficient
@@ -104,7 +104,12 @@ def update(params, state):
         tslope = getmag(dtdx,dtdy);
         
         
-        #hp_dbdx, vp_dbdy = compute_gradient_tf(state.topg, state.dx, state.dx)
+        # diffx, diffy = compute_gradient_tf(state.topg, state.dx, state.dx)
+        # diffx = tf.where(diffx < -params.maxb, -params.maxb, diffx)
+        # diffx = tf.where(diffx > params.maxb, params.maxb, diffx)
+        # diffy = tf.where(diffy < -params.maxb, -params.maxb, diffy)
+        # diffy = tf.where(diffy > params.maxb, params.maxb, diffy)
+        # bslope = getmag(diffx, diffy);
         
         hillslope_erosion = state.hillslope_erosion
         hillslope_erate = state.hillslope_erate
@@ -227,6 +232,7 @@ def update(params, state):
         # mean_dHs_hillslope = mean_dHs;
 
         # state.topg = state.topg + dH
+        state.topg = state.bed + state.sed
         state.hillslope = dH
 
         
