@@ -231,8 +231,8 @@ def update(params, state):
         # mean_dHs = tf.divide(mean_dHs,nc)*2.0 
         # mean_dHs_hillslope = mean_dHs;
 
-        # state.topg = state.topg + dH
-        state.topg = state.bed + state.sed
+        state.topg = state.topg + dH
+        # state.topg = state.bed + state.sed
         state.hillslope = dH
 
         
