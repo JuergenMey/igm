@@ -130,7 +130,7 @@ def update(params, state):
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         csero = tf.roll(ero,1,1);
         ero_l = csero<0.0;
-        state.bed = tf.where(ero_l,state.bed+csero,state.bed)
+        # state.bed = tf.where(ero_l,state.bed+csero,state.bed)
         hillslope_erosion = tf.where(ero_l,hillslope_erosion-csero,hillslope_erosion)
         hillslope_erate = tf.where(ero_l,-csero/state.dt,hillslope_erate)
         sed = tf.where(ero_l,sed-csero,sed)
@@ -140,8 +140,7 @@ def update(params, state):
         ero = tf.where(tf.logical_and(ero > maxero, ero > 0),maxero, ero) 
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         ero_u = ero>0;                      
-        # if (cells[i][j].ice > 5) ero = 0.0;
-        state.bed = tf.where(ero_u,state.bed - ero,state.bed)
+        # state.bed = tf.where(ero_u,state.bed - ero,state.bed)
         hillslope_erosion = tf.where(ero_u,hillslope_erosion + ero,hillslope_erosion)
         hillslope_erate = tf.where(ero_u,ero/state.dt,hillslope_erate)
         sed = tf.where(ero_u,sed + ero,sed)
@@ -159,7 +158,7 @@ def update(params, state):
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         csero = tf.roll(ero,-1,0);
         ero_l = csero<0.0;
-        state.bed = tf.where(ero_l,state.bed + csero,state.bed)
+        # state.bed = tf.where(ero_l,state.bed + csero,state.bed)
         hillslope_erosion = tf.where(ero_l, hillslope_erosion - csero, hillslope_erosion)
         hillslope_erate = tf.where(ero_l, -csero/state.dt, hillslope_erate)
         sed = tf.where(ero_l ,sed-csero, sed)
@@ -169,7 +168,7 @@ def update(params, state):
         ero = tf.where(tf.logical_and(ero > maxero, ero > 0),maxero, ero)
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         ero_u = ero>0;
-        state.bed = tf.where(ero_u,state.bed - ero,state.bed)
+        # state.bed = tf.where(ero_u,state.bed - ero,state.bed)
         hillslope_erosion = tf.where(ero_u, hillslope_erosion + ero, hillslope_erosion)
         hillslope_erate = tf.where(ero_u, ero/state.dt, hillslope_erate)
         sed = tf.where(ero_u, sed+ero, sed)
