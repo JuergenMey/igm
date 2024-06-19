@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import time
 from igm.modules.utils import *
+from scipy.interpolate import griddata
 
 
 
@@ -48,8 +49,9 @@ def initialize(params, state):
     if not hasattr(state,"tcomp_gflex"):
         state.tcomp_gflex = []
         state.tlast_gflex = tf.Variable(params.time_start, dtype=tf.float32)
-        state.topg0 = state.usurf - state.thk
-
+        state.topg0 = state.usurf - state.thk # remember initial topography
+    
+    state.isostasy = tf.zeros_like(state.topg)
     state.flex = F2D()
 
     state.flex.giafreq = params.gflex_update_freq
@@ -77,12 +79,11 @@ def initialize(params, state):
         state.flex.Te0 = state.Te    
     if not hasattr(state,"tcomp_gflex"):
         state.flex.Te0 = state.flex.Te   
+        
+        
     
 
 def update(params, state):
-    from scipy.interpolate import griddata
-    
-    initialize(params, state)
     
     def downsample_array_to_resolution(arr, dx, target_resolution):
         """
@@ -125,7 +126,7 @@ def update(params, state):
             state.logger.info("Update gflex at time : " + str(state.t.numpy()))
 
         state.tcomp_gflex.append(time.time())
-
+        initialize(params, state)
         state.flex.Te = np.float32(state.flex.Te0)       
         state.flex.qs = state.thk.numpy() * 917 * 9.81  # convert thicknesses to loads
         
@@ -195,6 +196,7 @@ def update(params, state):
             state.usurf = state.topg + state.thk
             
         state.isostasy = tf.Variable(state.flex.w, dtype=tf.float32)
+        # state.isostasy = state.flex.w
         # state.flex.plotChoice='both'
         # state.flex.output()
         # plt.imshow(state.flex.w)
