@@ -56,6 +56,7 @@ def initialize(params, state):
     
     state.hillslope_erosion = tf.zeros_like(state.topg)
     state.hillslope_erate = tf.zeros_like(state.topg)
+    state.hillslope = tf.zeros_like(state.topg)
     # state.sed = tf.zeros_like(state.topg)
     
     if not hasattr(state,'sed'):
@@ -233,7 +234,7 @@ def update(params, state):
 
         # state.topg = state.topg + dH
         state.topg = state.bed + state.sed
-        # state.hillslope = dH
+        state.hillslope += dH
 
         
         
