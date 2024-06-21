@@ -132,7 +132,7 @@ def update(params, state):
         
         # Erosional unloading
         if hasattr(state,"erosion"):
-            state.flex.qs = state.flex.qs - (state.glerosion.numpy() * 2000 * 9.81)
+            state.flex.qs = state.flex.qs - (state.glerosion.numpy() * 2700 * 9.81)
         
         if state.dx < state.flex.dx:
             if np.shape(state.flex.Te)==np.shape(state.flex.qs): # in case you want to use a pre-padded (and resampled) Te grid
