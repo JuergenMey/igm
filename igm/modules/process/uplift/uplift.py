@@ -35,6 +35,10 @@ def initialize(params, state):
     
     state.tcomp_uplift = []
     state.tlast_uplift = tf.Variable(params.time_start, dtype=tf.float32)
+    uplift_rate = tf.Variable(tf.zeros_like(tf.expand_dims(state.topg, axis=0), dtype="float32"), trainable=False)
+    uplift_rate[:, 1:-1, 1:-1].assign(1)
+    uplift_rate = tf.squeeze(uplift_rate)
+    state.uplift_rate = uplift_rate * params.uplift_rate
     state.uplift = tf.zeros_like(state.topg)
     
 
@@ -50,14 +54,42 @@ def update(params, state):
 
       
         # add the uplift to the topography 
-        state.uplift = state.uplift + (state.t - state.tlast_uplift) * params.uplift_rate
-        state.topg = state.topg + (state.t - state.tlast_uplift) * params.uplift_rate
+        state.uplift = state.uplift + (state.t - state.tlast_uplift) * state.uplift_rate
+        state.topg = state.topg + (state.t - state.tlast_uplift) * state.uplift_rate
        
 
         state.tlast_uplift.assign(state.t)
 
         state.tcomp_uplift[-1] -= time.time()
         state.tcomp_uplift[-1] *= -1
+
+# def initialize(params, state):
+    
+#     state.tcomp_uplift = []
+#     state.tlast_uplift = tf.Variable(params.time_start, dtype=tf.float32)
+#     state.uplift = tf.zeros_like(state.topg)
+    
+
+# def update(params, state):
+   
+   
+
+#     if (state.t - state.tlast_uplift) >= params.uplift_update_freq:
+#         if hasattr(state, "logger"):
+#             state.logger.info("Update uplift at time : " + str(state.t.numpy()))
+
+#         state.tcomp_uplift.append(time.time())
+
+      
+#         # add the uplift to the topography 
+#         state.uplift = state.uplift + (state.t - state.tlast_uplift) * params.uplift_rate
+#         state.topg = state.topg + (state.t - state.tlast_uplift) * params.uplift_rate
+       
+
+#         state.tlast_uplift.assign(state.t)
+
+#         state.tcomp_uplift[-1] -= time.time()
+#         state.tcomp_uplift[-1] *= -1
 
 
 def finalize(params, state):
