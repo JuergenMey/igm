@@ -468,18 +468,18 @@ def update(params, state):
         state.logger.info("Update ICEFLOW at time : " + str(state.t.numpy()))
 
     state.tcomp_iceflow.append(time.time())
-
-    if params.iflo_type == "emulated":
-        if params.iflo_retrain_emulator_freq > 0:
-            _update_iceflow_emulator(params, state)
-
-        _update_iceflow_emulated(params, state)
-
-    elif params.iflo_type == "solved":
-        _update_iceflow_solved(params, state)
-
-    elif params.iflo_type == "diagnostic":
-        _update_iceflow_diagnostic(params, state)
+    if tf.reduce_sum(state.thk) > 1e-6:
+        if params.iflo_type == "emulated":
+            if params.iflo_retrain_emulator_freq > 0:
+                _update_iceflow_emulator(params, state)
+    
+            _update_iceflow_emulated(params, state)
+    
+        elif params.iflo_type == "solved":
+            _update_iceflow_solved(params, state)
+    
+        elif params.iflo_type == "diagnostic":
+            _update_iceflow_diagnostic(params, state)
 
     state.tcomp_iceflow[-1] -= time.time()
     state.tcomp_iceflow[-1] *= -1
