@@ -54,7 +54,7 @@ def initialize(params, state):
     state.tcomp_hillslope = []
     state.tlast_hillslope = tf.Variable(params.time_start, dtype=tf.float32)
     
-    state.hillslope_erosion = tf.zeros_like(state.topg)
+    state.hillslope_erosion = tf.Variable(tf.zeros_like(state.topg), trainable=False)
     state.hillslope_erate = tf.zeros_like(state.topg)
     state.hillslope = tf.zeros_like(state.topg)
     # state.sed = tf.zeros_like(state.topg)
@@ -112,7 +112,7 @@ def update(params, state):
         # diffy = tf.where(diffy > params.maxb, params.maxb, diffy)
         # bslope = getmag(diffx, diffy);
         
-        hillslope_erosion = state.hillslope_erosion
+        # hillslope_erosion = state.hillslope_erosion
         hillslope_erate = state.hillslope_erate
         sed = state.sed;
         
@@ -121,9 +121,9 @@ def update(params, state):
         ###### h-points ################
         
         fac = 1.0 - tf.square(tf.divide(hp_dbdx,sc));
-        fac = tf.where(fac < 1.0e-4, tf.ones_like(fac)*1.0e-4, fac)
+        fac = tf.where(fac < 0.99, tf.ones_like(fac)*0.99, fac)
         sdiff = Ke/fac;
-        ero = sdiff*hp_dbdx*state.dt/state.dx*tf.sqrt(1.0+tf.square(bslope));        
+        ero = sdiff*hp_dbdx*params.hillslope_update_freq/state.dx*tf.sqrt(1.0+tf.square(bslope));        
         
         maxero = -state.bed+tf.roll(state.bed,-1,1)-sc*state.dx;
         maxero = tf.where(maxero  < 0.0, tf.zeros_like(maxero), maxero);
@@ -132,8 +132,8 @@ def update(params, state):
         csero = tf.roll(ero,1,1);
         ero_l = csero<0.0;
         state.bed = tf.where(ero_l,state.bed+csero,state.bed)
-        hillslope_erosion = tf.where(ero_l,hillslope_erosion-csero,hillslope_erosion)
-        hillslope_erate = tf.where(ero_l,-csero/state.dt,hillslope_erate)
+        # hillslope_erosion = tf.where(ero_l,hillslope_erosion-csero,hillslope_erosion)
+        hillslope_erate = tf.where(ero_l,-csero/params.hillslope_update_freq,hillslope_erate)
         sed = tf.where(ero_l,sed-csero,sed)
         
         maxero = state.bed-tf.roll(state.bed,-1,1)-sc*state.dx;
@@ -143,8 +143,8 @@ def update(params, state):
         ero_u = ero>0;                      
         # if (cells[i][j].ice > 5) ero = 0.0;
         state.bed = tf.where(ero_u,state.bed - ero,state.bed)
-        hillslope_erosion = tf.where(ero_u,hillslope_erosion + ero,hillslope_erosion)
-        hillslope_erate = tf.where(ero_u,ero/state.dt,hillslope_erate)
+        # hillslope_erosion = tf.where(ero_u,hillslope_erosion + ero,hillslope_erosion)
+        hillslope_erate = tf.where(ero_u,ero/params.hillslope_update_freq,hillslope_erate)
         sed = tf.where(ero_u,sed + ero,sed)
         
         ########## v-points ################
@@ -152,7 +152,7 @@ def update(params, state):
         fac = 1.0 - tf.square(tf.divide(vp_dbdy,sc));
         fac = tf.where(fac  < 1.0e-4, tf.ones_like(fac)*1.0e-4, fac)
         sdiff = Ke/fac;
-        ero = sdiff*vp_dbdy*state.dt/state.dx*tf.sqrt(1.0+tf.square(bslope));
+        ero = sdiff*vp_dbdy*params.hillslope_update_freq/state.dx*tf.sqrt(1.0+tf.square(bslope));
 
         maxero = tf.roll(state.bed,1,0)-state.bed-sc*state.dx;
         maxero = tf.where(maxero  < 0.0, tf.zeros_like(maxero), maxero);
@@ -161,8 +161,8 @@ def update(params, state):
         csero = tf.roll(ero,-1,0);
         ero_l = csero<0.0;
         state.bed = tf.where(ero_l,state.bed + csero,state.bed)
-        hillslope_erosion = tf.where(ero_l, hillslope_erosion - csero, hillslope_erosion)
-        hillslope_erate = tf.where(ero_l, -csero/state.dt, hillslope_erate)
+        # hillslope_erosion = tf.where(ero_l, hillslope_erosion - csero, hillslope_erosion)
+        hillslope_erate = tf.where(ero_l, -csero/params.hillslope_update_freq, hillslope_erate)
         sed = tf.where(ero_l ,sed-csero, sed)
 
         maxero = state.bed-tf.roll(state.bed,1,0)-sc*state.dx;
@@ -171,8 +171,8 @@ def update(params, state):
         ero = tf.where(state.thk > 5.0, tf.zeros_like(ero), ero)
         ero_u = ero>0;
         state.bed = tf.where(ero_u,state.bed - ero,state.bed)
-        hillslope_erosion = tf.where(ero_u, hillslope_erosion + ero, hillslope_erosion)
-        hillslope_erate = tf.where(ero_u, ero/state.dt, hillslope_erate)
+        # hillslope_erosion = tf.where(ero_u, hillslope_erosion + ero, hillslope_erosion)
+        hillslope_erate = tf.where(ero_u, ero/params.hillslope_update_freq, hillslope_erate)
         sed = tf.where(ero_u, sed+ero, sed)
         
         
@@ -183,10 +183,10 @@ def update(params, state):
         # /*h-points for horizontal transport*/
 
         fac = 1.0 - tf.square(tf.divide(hp_dtdx,sc));
-        fac = tf.where(fac  < 0.001, tf.ones_like(fac)*0.001, fac)
+        fac = tf.where(fac  < 0.99, tf.ones_like(fac)*0.99, fac)
         sdiff = Ks/fac;       
-        dHs = -sdiff*hp_dtdx*state.dt/state.dx;
-        dHs_neg = dHs<0;
+        dHs = -sdiff*hp_dtdx*params.hillslope_update_freq/state.dx;
+        dHs_neg = dHs<0.0;
         sed_neg = sed <= 0.0;
         id1 = dHs_neg & sed_neg;
         dHs = tf.where(id1, tf.zeros_like(dHs),dHs)
@@ -205,9 +205,9 @@ def update(params, state):
 
         # /*v-points*/
         fac = 1.0 - tf.square(tf.divide(vp_dtdy,sc));
-        fac = tf.where(fac  < 0.001, tf.ones_like(fac)*0.001, fac)
+        fac = tf.where(fac  < 0.99, tf.ones_like(fac)*0.99, fac)
         sdiff = Ks/fac;
-        dHs = -sdiff*vp_dtdy*state.dt/state.dx;
+        dHs = -sdiff*vp_dtdy*params.hillslope_update_freq/state.dx;
         dHs_neg = dHs < 0.0;
         sed_neg = sed <= 0.0;
         id1 = dHs_neg & sed_neg;
@@ -224,16 +224,21 @@ def update(params, state):
         dHs = tf.where(id4, sed_down, dHs)
         dH = dH + dHs;
         dH = dH - tf.roll(dHs,-1,0);
-
-        state.sed = sed + dH;
-        state.hillslope_erosion = hillslope_erosion
-        state.hillslope_erate = hillslope_erate
+        
+        
+        state.sed = sed+dH;
+        # state.sed += tf.where(dH>0.0, dH, 0)
+        # state.sed.assign_add(tf.where(dH>0.0, dH, 0))
+        # state.hillslope_erosion = hillslope_erosion
+        erosion = dH<0.0
+        state.hillslope_erosion.assign_add(tf.where(erosion, dH, 0.0))
         # mean_dHs = mean_dHs + tf.reduce_sum(tf.abs(dH));
         # mean_dHs = tf.divide(mean_dHs,nc)*2.0 
         # mean_dHs_hillslope = mean_dHs;
 
         # state.topg = state.topg + dH
         state.topg = state.bed + state.sed
+        state.usurf = state.topg + state.thk
         state.hillslope += dH
 
         
