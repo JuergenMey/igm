@@ -34,7 +34,7 @@ def params(parser):
 def initialize(params, state):
     
     state.tcomp_uplift = []
-    state.tlast_uplift = tf.Variable(params.time_start, dtype=tf.float32)
+    state.tlast_uplift = tf.Variable(-1.0)
     uplift_rate = tf.Variable(tf.zeros_like(tf.expand_dims(state.topg, axis=0), dtype="float32"), trainable=False)
     uplift_rate[:, 1:-1, 1:-1].assign(1)
     uplift_rate = tf.squeeze(uplift_rate)
