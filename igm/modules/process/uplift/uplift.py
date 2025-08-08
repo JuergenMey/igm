@@ -54,8 +54,8 @@ def update(params, state):
 
       
         # add the uplift to the topography 
-        state.uplift = state.uplift + (state.t - state.tlast_uplift) * state.uplift_rate
-        state.topg = state.topg + (state.t - state.tlast_uplift) * state.uplift_rate
+        state.uplift = state.uplift + (params.uplift_update_freq) * state.uplift_rate
+        state.topg = state.topg + state.uplift
        
 
         state.tlast_uplift.assign(state.t)
