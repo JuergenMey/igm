@@ -178,8 +178,8 @@ def update(params, state):
         
         ##### hillslope sediment transport ##############
         
-        # dH =  tf.zeros_like(state.topg)
-        dH = tf.Variable(tf.zeros_like(state.topg), trainable=False)
+        dH =  tf.zeros_like(state.topg)
+       
 
         # /*h-points for horizontal transport*/
 
@@ -226,6 +226,7 @@ def update(params, state):
         dH = dH + dHs;
         dH = dH - tf.roll(dHs,-1,0);
         
+        dH = tf.Variable(dH,trainable=False)
         
         # Zero top and bottom rows
         dH[0, :].assign(tf.zeros_like(dH[0, :]))
