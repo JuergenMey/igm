@@ -69,25 +69,23 @@ def update(params, state):
         )
 
     state.tcomp_time.append(time.time())
-    if tf.reduce_any(state.thk > 0):
-        # compute maximum ice velocitiy magnitude
-        velomax = max(
-            tf.math.reduce_max(tf.math.abs(state.ubar)),
-            tf.math.reduce_max(tf.math.abs(state.vbar)),
+
+    # compute maximum ice velocitiy magnitude
+    velomax = max(
+        tf.math.reduce_max(tf.math.abs(state.ubar)),
+        tf.math.reduce_max(tf.math.abs(state.vbar)),
+    )
+
+    # dt_target account for both cfl and dt_max
+    if (velomax > 0) & (params.time_cfl>0):
+        state.dt_target = min(
+            params.time_cfl * state.dx / velomax, params.time_step_max
         )
-    
-        # dt_target account for both cfl and dt_max
-        if (velomax > 0) & (params.time_cfl>0):
-            state.dt_target = min(
-                params.time_cfl * state.dx / velomax, params.time_step_max
-            )
-        else:
-            state.dt_target = params.time_step_max
-    
-        state.dt = state.dt_target
     else:
-        state.dt = state.dt_target
-    
+        state.dt_target = params.time_step_max
+
+    state.dt = state.dt_target
+
     # modify dt such that times of requested savings are reached exactly
     if state.time_save[state.itsave + 1] <= state.t + state.dt:
         state.dt = state.time_save[state.itsave + 1] - state.t
